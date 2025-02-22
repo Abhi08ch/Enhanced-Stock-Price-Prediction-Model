@@ -1,4 +1,5 @@
 📈 Enhanced Stock Price Prediction
+
 Welcome to the Enhanced Stock Price Prediction project! 🚀 This web application leverages machine learning to predict stock prices based on historical data. Built with TensorFlow.js, Chart.js, and modern web technologies, this project provides an interactive and visually appealing interface for training models, analyzing predictions, and evaluating performance metrics.
 
 ✨ Features
