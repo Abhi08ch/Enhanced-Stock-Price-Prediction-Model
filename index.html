@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Stock Price Prediction</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.7.0/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+     /* Import modern fonts */
+/* Import modern fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+/* Modern CSS Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    min-height: 100vh;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    letter-spacing: -0.5px;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #fdbb2d, #b21f1f);
+    border-radius: 2px;
+}
+
+.config-section {
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.config-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.config-section div {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.config-section label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: #fdbb2d;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(253, 187, 45, 0.1);
+}
+
+button {
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #fdbb2d, #b21f1f);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 16px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.chart-container {
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.status-info {
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(41, 128, 185, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(41, 128, 185, 0.5);
+    margin: 1rem 0;
+}
+
+.status-error {
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(192, 57, 43, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(192, 57, 43, 0.5);
+    margin: 1rem 0;
+}
+
+#progressBar {
+    width: 100%;
+    height: 8px;
+    margin: 1.5rem 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+#progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #fdbb2d, #b21f1f);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    .container {
+        padding: 1.5rem;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced Stock Price Prediction</h1>
+        
+        <div class="config-section">
+            <h3>Model Configuration</h3>
+            <div>
+                <label>Learning Rate:</label>
+                <input type="number" id="learningRate" value="0.001" step="0.0001">
+            </div>
+            <div>
+                <label>Epochs:</label>
+                <input type="number" id="epochs" value="100" step="1">
+            </div>
+            <div>
+                <label>Batch Size:</label>
+                <input type="number" id="batchSize" value="32" step="1">
+            </div>
+        </div>
+
+        <div class="input-section">
+            <h3>Upload Training Data (CSV)</h3>
+            <input type="file" id="csvFile" accept=".csv">
+            <button id="trainButton" onclick="processData()">Train Model</button>
+            <div id="progressBar">
+                <div id="progressFill"></div>
+            </div>
+            <div id="status" class="status-info"></div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <h3>RMSE</h3>
+                <div id="rmse">-</div>
+            </div>
+            <div class="metric-card">
+                <h3>MAE</h3>
+                <div id="mae">-</div>
+            </div>
+            <div class="metric-card">
+                <h3>R²</h3>
+                <div id="r2">-</div>
+            </div>
+            <div class="metric-card">
+                <h3>Dir. Accuracy</h3>
+                <div id="dirAcc">-</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <canvas id="predictionChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="residualChart"></canvas>
+            </div>
+        </div>
+
+        <div id="debugInfo"></div>
+
+        <h3>Make a Prediction</h3>
+        <input type="text" id="predictInput" placeholder="Enter Open, High, Low, Volume (comma-separated)">
+        <button onclick="makePrediction()">Predict</button>
+        <div id="predictionResult" class="metric-card"></div>
+    </div>
+
+    <script>
+        let model, mean, std, charts = {};
+        const requiredColumns = ['open', 'high', 'low', 'volume', 'close'];
+
+        function updateDebug(message) {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.textContent += message + '\n';
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
+
+        function updateStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status-error' : 'status-info';
+        }
+
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = `${percentage}%`;
+        }
+
+        function removeOutliers(data, columns, threshold = 3) {
+            const stats = {};
+            columns.forEach(col => {
+                const values = data.map(row => row[col]);
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const std = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
+                stats[col] = { mean, std };
+            });
+
+            return data.filter(row => {
+                return columns.every(col => {
+                    const z = Math.abs((row[col] - stats[col].mean) / stats[col].std);
+                    return z <= threshold;
+                });
+            });
+        }
+
+        function calculateR2(actual, predicted) {
+        return tf.tidy(() => {
+            const actualMean = tf.mean(actual);
+            const predictedTensor = tf.tensor1d(Array.from(predicted.dataSync()));
+            
+            // Calculate total sum of squares
+            const totalSumSquares = tf.sum(actual.sub(actualMean).square());
+            
+            // Calculate residual sum of squares
+            const residualSumSquares = tf.sum(actual.sub(predictedTensor).square());
+            
+            // Calculate R²
+            const r2 = tf.sub(1, tf.div(residualSumSquares, totalSumSquares));
+            
+            // Get the scalar value
+            const r2Value = r2.dataSync()[0];
+            
+            // Ensure the value is within [-1, 1] range
+            return Math.max(-1, Math.min(1, r2Value));
+        });
+}
+
+        function calculateDirectionalAccuracy(actual, predicted, threshold = 0.01) {
+            let correct = 0;
+            let count = 0; // To track valid comparisons
+
+            for (let i = 1; i < actual.length; i++) {
+                const actualDirection = Math.sign(actual[i] - actual[i - 1]);
+                const predictedDirection = Math.sign(predicted[i] - predicted[i - 1]);
+
+                if (Math.abs(actual[i] - actual[i - 1]) > threshold) { // Ignore minor fluctuations
+                    count++; // Count only meaningful movements
+                    if (actualDirection === predictedDirection) correct++;
+                }
+            }
+
+            if (count === 0) return 0; // Avoid division by zero
+
+            return Number(((correct / count) * 100).toFixed(2)); // Ensure return is a number
+        }
+
+
+
+        async function readCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    complete: (results) => {
+                        const data = results.data.filter(row => row.length > 1);
+                        if (data.length < 2) return reject(new Error("CSV file is empty or invalid"));
+
+                        const headers = data[0].map(h => h.trim().toLowerCase());
+                        const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+
+                        if (missingColumns.length > 0) {
+                            return reject(new Error(`Missing required columns: ${missingColumns.join(', ')}`));
+                        }
+
+                        const colIndices = headers.reduce((acc, h, i) => {
+                            acc[h] = i;
+                            return acc;
+                        }, {});
+
+                        const formattedData = data.slice(1)
+                            .map(row => ({
+                                open: parseFloat(row[colIndices.open]),
+                                high: parseFloat(row[colIndices.high]),
+                                low: parseFloat(row[colIndices.low]),
+                                volume: parseFloat(row[colIndices.volume]),
+                                close: parseFloat(row[colIndices.close])
+                            }))
+                            .filter(row => !Object.values(row).some(isNaN));
+
+                        if (formattedData.length === 0) {
+                            return reject(new Error("No valid numeric data found"));
+                        }
+
+                        // Remove outliers
+                        const cleanData = removeOutliers(formattedData, ['open', 'high', 'low', 'close'], 3);
+                        resolve(cleanData);
+                    },
+                    error: reject,
+                    skipEmptyLines: true
+                });
+            });
+        }
+
+        function createModel() {
+            const model = tf.sequential();
+            
+            // First layer with L2 regularization
+            model.add(tf.layers.dense({
+                units: 128,
+                activation: 'relu',
+                inputShape: [4],
+                kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
+            }));
+            model.add(tf.layers.batchNormalization());
+            model.add(tf.layers.dropout(0.3));
+            
+            // Second layer
+            model.add(tf.layers.dense({
+                units: 64,
+                activation: 'relu',
+                kernelRegularizer: tf.regularizers.l2({ l2: 0.01 })
+            }));
+            model.add(tf.layers.batchNormalization());
+            model.add(tf.layers.dropout(0.2));
+            
+            // Output layer
+            model.add(tf.layers.dense({ units: 1 }));
+            
+            return model;
+        }
+
+        async function trainModel(data) {
+            try {
+                updateStatus('Preprocessing data...');
+                updateDebug('Starting data preprocessing...');
+
+                const X = data.map(row => [row.open, row.high, row.low, row.volume]);
+                const y = data.map(row => row.close);
+
+                // Split data
+                const splitIdx = Math.floor(data.length * 0.8);
+                const [X_train_raw, X_test_raw] = [X.slice(0, splitIdx), X.slice(splitIdx)];
+                const [y_train_raw, y_test_raw] = [y.slice(0, splitIdx), y.slice(splitIdx)];
+
+                // Convert to tensors
+                const X_train_tensor = tf.tensor2d(X_train_raw);
+                const X_test_tensor = tf.tensor2d(X_test_raw);
+                const y_train_tensor = tf.tensor1d(y_train_raw);
+                const y_test_tensor = tf.tensor1d(y_test_raw);
+
+                // Compute scaling parameters
+                const meanTensor = X_train_tensor.mean(0);
+                const stdTensor = X_train_tensor.sub(meanTensor).square().mean(0).sqrt().add(1e-7);
+                [mean, std] = await Promise.all([meanTensor.array(), stdTensor.array()]);
+
+                // Scale data
+                const X_train_scaled = X_train_tensor.sub(meanTensor).div(stdTensor);
+                const X_test_scaled = X_test_tensor.sub(meanTensor).div(stdTensor);
+
+                // Create and compile model
+                model = createModel();
+                const learningRate = parseFloat(document.getElementById('learningRate').value);
+                const epochs = parseInt(document.getElementById('epochs').value);
+                const batchSize = parseInt(document.getElementById('batchSize').value);
+
+                model.compile({
+                    optimizer: tf.train.adam(learningRate),
+                    loss: 'meanSquaredError',
+                    metrics: ['mae']
+                });
+
+                // Early stopping callback
+                const earlyStoppingCallback = {
+                    async onEpochEnd(epoch, logs) {
+                        updateProgress(((epoch + 1) / epochs) * 100);
+                        if ((epoch + 1) % 10 === 0) {
+                            updateDebug(`Epoch ${epoch + 1} - Loss: ${logs.loss.toFixed(4)}, Val Loss: ${logs.val_loss.toFixed(4)}`);
+                        }
+                    }
+                };
+
+                // Train model
+                await model.fit(X_train_scaled, y_train_tensor, {
+                    epochs: epochs,
+                    batchSize: batchSize,
+                    validationSplit: 0.2,
+                    shuffle: true,
+                    callbacks: [earlyStoppingCallback]
+                });
+
+                // Make predictions
+                const y_pred = model.predict(X_test_scaled);
+                console.log('Predictions:', y_pred.dataSync());
+                const y_test = y_test_tensor.dataSync();
+                const y_pred_data = y_pred.dataSync();
+
+                // Calculate metrics
+                const calculateScaledMetrics = (actual, predicted) => {
+                    return tf.tidy(() => {
+                        const actualTensor = tf.tensor1d(actual);
+                        const predTensor = tf.tensor1d(predicted);
+                        
+                        // Calculate raw errors
+                        const errors = tf.sub(actualTensor, predTensor);
+                        
+                        // Calculate RMSE
+                        const rmse = tf.sqrt(tf.mean(tf.square(errors)));
+                        
+                        // Calculate MAE
+                        const mae = tf.mean(tf.abs(errors));
+                        
+                        // Calculate percentage errors
+                        const meanPrice = tf.mean(actualTensor);
+                        const rmsePercent = tf.mul(tf.div(rmse, meanPrice), 100);
+                        const maePercent = tf.mul(tf.div(mae, meanPrice), 100);
+                        
+                        return {
+                            rmse: rmse.dataSync()[0],
+                            mae: mae.dataSync()[0],
+                            rmsePercent: rmsePercent.dataSync()[0],
+                            maePercent: maePercent.dataSync()[0]
+                        };
+                    });
+                };
+
+                const metrics = calculateScaledMetrics(y_test, y_pred_data);
+                const r2 = calculateR2(y_test_tensor, y_pred);
+                const dirAcc = calculateDirectionalAccuracy(y_test, y_pred_data);
+
+                // Update UI
+                document.getElementById('rmse').textContent = `${metrics.rmse.toFixed(6)} (${metrics.rmsePercent.toFixed(2)}%)`;
+                document.getElementById('mae').textContent = `${metrics.mae.toFixed(6)} (${metrics.maePercent.toFixed(2)}%)`;
+                document.getElementById('r2').textContent = r2.toFixed(2);
+                document.getElementById('dirAcc').textContent = dirAcc.toFixed(2) + '%';
+
+                // Update charts
+                updatePredictionChart(y_test, y_pred_data);
+                updateResidualChart(y_test, y_pred_data);
+                
+                updateStatus('Model training completed successfully!');
+                updateDebug('Training completed. Model is ready for predictions.');
+
+                // Cleanup tensors
+                tf.dispose([X_train_tensor, X_test_tensor, y_train_tensor, y_test_tensor, 
+                           meanTensor, stdTensor, X_train_scaled, X_test_scaled, y_pred]);
+
+            } catch (error) {
+                updateStatus(`Training failed: ${error.message}`, true);
+                updateDebug(`Training error: ${error.message}`);
+                console.error('Training error:', error);
+            } finally {
+                document.getElementById('progressBar').style.display = 'none';
+                document.getElementById('trainButton').disabled = false;
+            }
+        }
+
+        function updatePredictionChart(actual, predicted) {
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            if (charts.prediction) charts.prediction.destroy();
+
+            charts.prediction = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: actual.length }, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'Actual Prices',
+                        data: actual,
+                        borderColor: '#4CAF50',
+                        tension: 0.1,
+                        fill: false
+                    }, {
+                        label: 'Predicted Prices',
+                        data: predicted,
+                        borderColor: '#2196F3',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Price Prediction Comparison'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Price'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateResidualChart(actual, predicted) {
+        if (!actual || !predicted || actual.length === 0 || predicted.length === 0) {
+            console.error('Invalid data passed to updateResidualChart');
+            return;
+        }
+
+        const ctx = document.getElementById('residualChart').getContext('2d');
+        if (charts.residual) charts.residual.destroy();
+
+        // Calculate residuals
+        const residuals = actual.map((a, i) => a - predicted[i]);
+
+        // Prepare data for the scatter plot
+        const scatterData = predicted.map((pred, i) => ({
+            x: pred, // Predicted values on the x-axis
+            y: residuals[i] // Residuals on the y-axis
+        }));
+
+        // Debug logs to verify data
+        console.log('Actual:', actual);
+        console.log('Predicted:', predicted);
+        console.log('Residuals:', residuals);
+        console.log('Scatter Data:', scatterData);
+
+        // Check if scatterData is empty
+        if (scatterData.length === 0) {
+            console.error('No data to plot in the residual chart');
+            return;
+        }
+
+        charts.residual = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Residuals',
+                    data: scatterData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Residual Analysis'
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Predicted Values'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Residuals'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+        async function processData() {
+            try {
+                const file = document.getElementById('csvFile').files[0];
+                if (!file) throw new Error('Please select a CSV file');
+
+                document.getElementById('trainButton').disabled = true;
+                updateStatus('Loading and validating CSV...');
+                
+                const data = await readCSV(file);
+                console.log('CSV Data:', data);
+                await trainModel(data);
+            } catch (error) {
+                updateStatus(error.message, true);
+                document.getElementById('trainButton').disabled = false;
+            }
+        }
+
+        function makePrediction() {
+            try {
+                if (!model || !mean || !std) throw new Error('Please train the model first');
+                
+                const input = document.getElementById('predictInput').value
+                    .split(',')
+                    .map(x => parseFloat(x.trim()));
+                
+                if (input.length !== 4 || input.some(isNaN)) {
+                    throw new Error('Invalid input format. Use: Open,High,Low,Volume');
+                }
+
+                const inputTensor = tf.tensor2d([input]);
+                const scaledInput = inputTensor.sub(tf.tensor1d(mean)).div(tf.tensor1d(std));
+                const prediction = model.predict(scaledInput).dataSync()[0];
+                
+                document.getElementById('predictionResult').innerHTML = `
+                    <h4>Prediction Result</h4>
+                    <p>Predicted Close Price: <strong>${prediction.toFixed(2)}</strong></p>
+                `;
+
+                // Cleanup tensors
+                tf.dispose([inputTensor, scaledInput]);
+            } catch (error) {
+                updateStatus(error.message, true);
+            }
+        }
+
+        // Initialize TensorFlow backend
+        tf.setBackend('webgl').then(() => {
+            updateDebug('TensorFlow.js initialized with WebGL acceleration');
+        }).catch(error => {
+            updateDebug('Failed to initialize WebGL backend, falling back to CPU');
+            tf.setBackend('cpu');
+        });
+    </script>
+</body>
+</html>
